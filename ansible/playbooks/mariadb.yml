@@ -1,0 +1,115 @@
+---
+# MariaDB deployment playbook with RHEL 8/9 compatibility
+- name: Deploy MariaDB Database Server
+  hosts: mariadb_servers
+  become: true
+  gather_facts: true
+  
+  vars:
+    mariadb_root_password: "ChangeMe123!"  # Use Ansible Vault in production
+    mariadb_database: "enterprise_db"
+    mariadb_user: "app_user"
+    mariadb_password: "AppPass123!"  # Use Ansible Vault in production
+  
+  tasks:
+    - name: Detect OS version for conditional logic
+      set_fact:
+        is_rhel8: "{{ ansible_distribution_major_version == '8' }}"
+        is_rhel9: "{{ ansible_distribution_major_version == '9' }}"
+    
+    - name: Add MariaDB repository (RHEL 8)
+      yum_repository:
+        name: mariadb
+        description: MariaDB Repository
+        baseurl: "{{ mariadb_repo_baseurl }}"
+        gpgkey: "{{ mariadb_repo_gpgkey }}"
+        gpgcheck: true
+        enabled: true
+      when: is_rhel8
+    
+    - name: Add MariaDB repository (RHEL 9)
+      yum_repository:
+        name: mariadb
+        description: MariaDB Repository
+        baseurl: "{{ mariadb_repo_baseurl }}"
+        gpgkey: "{{ mariadb_repo_gpgkey }}"
+        gpgcheck: true
+        enabled: true
+      when: is_rhel9
+    
+    - name: Install MariaDB server
+      package:
+        name:
+          - MariaDB-server
+          - MariaDB-client
+          - python3-PyMySQL
+        state: present
+    
+    - name: Start and enable MariaDB service
+      systemd:
+        name: mariadb
+        state: started
+        enabled: true
+    
+    - name: Configure firewall for MariaDB
+      firewalld:
+        service: mysql
+        permanent: true
+        state: enabled
+        immediate: true
+      when: firewall_enabled | bool
+    
+    - name: Set MariaDB root password
+      mysql_user:
+        name: root
+        password: "{{ mariadb_root_password }}"
+        login_unix_socket: /var/lib/mysql/mysql.sock
+        state: present
+      no_log: true
+    
+    - name: Create application database
+      mysql_db:
+        name: "{{ mariadb_database }}"
+        state: present
+        login_user: root
+        login_password: "{{ mariadb_root_password }}"
+    
+    - name: Create application database user
+      mysql_user:
+        name: "{{ mariadb_user }}"
+        password: "{{ mariadb_password }}"
+        priv: "{{ mariadb_database }}.*:ALL"
+        state: present
+        login_user: root
+        login_password: "{{ mariadb_root_password }}"
+      no_log: true
+    
+    - name: Remove anonymous users
+      mysql_user:
+        name: ''
+        host_all: true
+        state: absent
+        login_user: root
+        login_password: "{{ mariadb_root_password }}"
+    
+    - name: Remove test database
+      mysql_db:
+        name: test
+        state: absent
+        login_user: root
+        login_password: "{{ mariadb_root_password }}"
+    
+    - name: Configure MariaDB for production
+      template:
+        src: ../templates/mariadb/my.cnf.j2
+        dest: /etc/my.cnf.d/server.cnf
+        owner: root
+        group: root
+        mode: '0644'
+      notify: restart mariadb
+  
+  handlers:
+    - name: restart mariadb
+      systemd:
+        name: mariadb
+        state: restarted

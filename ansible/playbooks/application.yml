@@ -1,0 +1,97 @@
+---
+# Application deployment playbook
+- name: Deploy Enterprise Application
+  hosts: application_servers
+  become: true
+  gather_facts: true
+  
+  vars:
+    app_port: 8080
+    api_port: 3000
+  
+  tasks:
+    - name: Create application user
+      user:
+        name: "{{ app_user }}"
+        group: "{{ app_group }}"
+        shell: /bin/bash
+        create_home: true
+        state: present
+    
+    - name: Create application directory
+      file:
+        path: "{{ app_home }}"
+        state: directory
+        owner: "{{ app_user }}"
+        group: "{{ app_group }}"
+        mode: '0755'
+    
+    - name: Create log directory
+      file:
+        path: "{{ log_directory }}"
+        state: directory
+        owner: "{{ app_user }}"
+        group: "{{ app_group }}"
+        mode: '0755'
+    
+    - name: Install application dependencies
+      package:
+        name:
+          - "{{ python_package }}"
+          - "{{ python_pip_package }}"
+          - gcc
+          - python3-devel
+        state: present
+    
+    - name: Copy application files
+      copy:
+        src: ../files/app/
+        dest: "{{ app_home }}/"
+        owner: "{{ app_user }}"
+        group: "{{ app_group }}"
+        mode: '0644'
+    
+    - name: Install Python dependencies
+      pip:
+        requirements: "{{ app_home }}/requirements.txt"
+        executable: pip3
+      become_user: "{{ app_user }}"
+    
+    - name: Create systemd service file for web app
+      template:
+        src: ../templates/systemd/webapp.service.j2
+        dest: /etc/systemd/system/webapp.service
+        owner: root
+        group: root
+        mode: '0644'
+      notify: reload systemd
+    
+    - name: Configure firewall for application
+      firewalld:
+        port: "{{ item }}/tcp"
+        permanent: true
+        state: enabled
+        immediate: true
+      loop:
+        - "{{ app_port }}"
+        - "{{ api_port }}"
+      when: firewall_enabled | bool
+    
+    - name: Start and enable application service
+      systemd:
+        name: webapp
+        state: started
+        enabled: true
+    
+    - name: Configure SELinux for application ports
+      seport:
+        ports: "{{ app_port }}"
+        proto: tcp
+        setype: http_port_t
+        state: present
+      when: ansible_selinux.status == 'enabled'
+  
+  handlers:
+    - name: reload systemd
+      systemd:
+        daemon_reload: true

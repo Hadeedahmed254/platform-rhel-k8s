@@ -1,0 +1,55 @@
+name: Ansible Playbook Testing
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'ansible/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'ansible/**'
+
+jobs:
+  ansible-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Ansible and ansible-lint
+        run: |
+          pip install ansible ansible-lint
+
+      - name: Run ansible-lint
+        run: |
+          cd ansible
+          ansible-lint playbooks/*.yml
+
+  syntax-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Ansible
+        run: |
+          pip install ansible
+
+      - name: Syntax check playbooks
+        run: |
+          cd ansible
+          ansible-playbook playbooks/site.yml --syntax-check
+          ansible-playbook playbooks/mariadb.yml --syntax-check
+          ansible-playbook playbooks/mongodb.yml --syntax-check
+          ansible-playbook playbooks/application.yml --syntax-check

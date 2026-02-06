@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mariadb
+  namespace: tenant-a
+  labels:
+    app: mariadb
+    tier: database
+spec:
+  serviceName: mariadb-service
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mariadb
+  template:
+    metadata:
+      labels:
+        app: mariadb
+        tier: database
+    spec:
+      containers:
+      - name: mariadb
+        image: mariadb:10.11
+        ports:
+        - containerPort: 3306
+          name: mysql
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: mariadb-root-password
+        - name: MYSQL_DATABASE
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: MARIADB_DATABASE
+        - name: MYSQL_USER
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: mariadb-user
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: mariadb-password
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        volumeMounts:
+        - name: mariadb-storage
+          mountPath: /var/lib/mysql
+        livenessProbe:
+          exec:
+            command:
+            - mysqladmin
+            - ping
+            - -h
+            - localhost
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+        readinessProbe:
+          exec:
+            command:
+            - mysqladmin
+            - ping
+            - -h
+            - localhost
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+  volumeClaimTemplates:
+  - metadata:
+      name: mariadb-storage
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 10Gi

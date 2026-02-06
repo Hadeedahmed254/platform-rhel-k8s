@@ -1,0 +1,29 @@
+# MariaDB Server Configuration
+[mysqld]
+datadir=/var/lib/mysql
+socket=/var/lib/mysql/mysql.sock
+log-error=/var/log/mariadb/mariadb.log
+pid-file=/run/mariadb/mariadb.pid
+
+# Performance tuning
+max_connections = 200
+innodb_buffer_pool_size = 1G
+innodb_log_file_size = 256M
+innodb_flush_log_at_trx_commit = 2
+innodb_flush_method = O_DIRECT
+
+# Character set
+character-set-server = utf8mb4
+collation-server = utf8mb4_unicode_ci
+
+# Binary logging (for replication)
+log_bin = /var/log/mariadb/mariadb-bin.log
+expire_logs_days = 7
+max_binlog_size = 100M
+
+# Security
+bind-address = 0.0.0.0
+skip-name-resolve
+
+[client]
+socket=/var/lib/mysql/mysql.sock

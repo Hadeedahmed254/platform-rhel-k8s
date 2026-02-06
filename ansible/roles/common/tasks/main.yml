@@ -1,0 +1,77 @@
+---
+# Common role tasks for all servers
+- name: Gather OS facts
+  setup:
+    gather_subset:
+      - '!all'
+      - '!min'
+      - distribution
+      - os_family
+
+- name: Display detected OS information
+  debug:
+    msg: |
+      Distribution: {{ ansible_distribution }}
+      Version: {{ ansible_distribution_version }}
+      Major Version: {{ ansible_distribution_major_version }}
+      OS Family: {{ ansible_os_family }}
+
+- name: Install EPEL repository (RHEL 8)
+  package:
+    name: epel-release
+    state: present
+  when: ansible_distribution_major_version == '8'
+
+- name: Install EPEL repository (RHEL 9)
+  package:
+    name: epel-release
+    state: present
+  when: ansible_distribution_major_version == '9'
+
+- name: Install common system packages
+  package:
+    name: "{{ system_packages }}"
+    state: present
+
+- name: Ensure firewalld is running
+  systemd:
+    name: "{{ firewall_service }}"
+    state: started
+    enabled: true
+  when: firewall_enabled | bool
+
+- name: Configure SELinux to enforcing mode
+  selinux:
+    policy: targeted
+    state: "{{ selinux_state }}"
+  when: ansible_selinux is defined
+
+- name: Set timezone to UTC
+  timezone:
+    name: UTC
+
+- name: Configure NTP/Chrony
+  package:
+    name: chrony
+    state: present
+
+- name: Start and enable chronyd
+  systemd:
+    name: chronyd
+    state: started
+    enabled: true
+
+- name: Disable unnecessary services
+  systemd:
+    name: "{{ item }}"
+    state: stopped
+    enabled: false
+  loop:
+    - postfix
+  ignore_errors: true
+
+- name: Update all packages
+  package:
+    name: '*'
+    state: latest
+  when: package_update_cache | bool

@@ -1,0 +1,132 @@
+---
+# MongoDB deployment playbook with RHEL 8/9 compatibility
+- name: Deploy MongoDB Database Server
+  hosts: mongodb_servers
+  become: true
+  gather_facts: true
+  
+  vars:
+    mongodb_admin_user: "admin"
+    mongodb_admin_password: "AdminPass123!"  # Use Ansible Vault in production
+    mongodb_app_user: "app_user"
+    mongodb_app_password: "AppPass123!"  # Use Ansible Vault in production
+    mongodb_app_database: "enterprise_db"
+  
+  tasks:
+    - name: Detect OS version for conditional logic
+      set_fact:
+        is_rhel8: "{{ ansible_distribution_major_version == '8' }}"
+        is_rhel9: "{{ ansible_distribution_major_version == '9' }}"
+    
+    - name: Add MongoDB repository (RHEL 8)
+      yum_repository:
+        name: mongodb-org
+        description: MongoDB Repository
+        baseurl: "{{ mongodb_repo_baseurl }}"
+        gpgkey: "{{ mongodb_repo_gpgkey }}"
+        gpgcheck: true
+        enabled: true
+      when: is_rhel8
+    
+    - name: Add MongoDB repository (RHEL 9)
+      yum_repository:
+        name: mongodb-org
+        description: MongoDB Repository
+        baseurl: "{{ mongodb_repo_baseurl }}"
+        gpgkey: "{{ mongodb_repo_gpgkey }}"
+        gpgcheck: true
+        enabled: true
+      when: is_rhel9
+    
+    - name: Install MongoDB packages
+      package:
+        name:
+          - mongodb-org
+          - mongodb-org-server
+          - mongodb-org-shell
+          - mongodb-org-mongos
+          - mongodb-org-tools
+          - python3-pymongo
+        state: present
+    
+    - name: Create MongoDB data directory
+      file:
+        path: /var/lib/mongo
+        state: directory
+        owner: mongod
+        group: mongod
+        mode: '0755'
+    
+    - name: Create MongoDB log directory
+      file:
+        path: /var/log/mongodb
+        state: directory
+        owner: mongod
+        group: mongod
+        mode: '0755'
+    
+    - name: Configure MongoDB
+      template:
+        src: ../templates/mongodb/mongod.conf.j2
+        dest: /etc/mongod.conf
+        owner: root
+        group: root
+        mode: '0644'
+      notify: restart mongodb
+    
+    - name: Start and enable MongoDB service
+      systemd:
+        name: mongod
+        state: started
+        enabled: true
+    
+    - name: Configure firewall for MongoDB
+      firewalld:
+        port: 27017/tcp
+        permanent: true
+        state: enabled
+        immediate: true
+      when: firewall_enabled | bool
+    
+    - name: Wait for MongoDB to be ready
+      wait_for:
+        port: 27017
+        delay: 5
+        timeout: 60
+    
+    - name: Create MongoDB admin user
+      mongodb_user:
+        database: admin
+        name: "{{ mongodb_admin_user }}"
+        password: "{{ mongodb_admin_password }}"
+        roles:
+          - db: admin
+            role: root
+        state: present
+      no_log: true
+    
+    - name: Create application database
+      mongodb_db:
+        name: "{{ mongodb_app_database }}"
+        state: present
+        login_user: "{{ mongodb_admin_user }}"
+        login_password: "{{ mongodb_admin_password }}"
+    
+    - name: Create application user
+      mongodb_user:
+        database: "{{ mongodb_app_database }}"
+        name: "{{ mongodb_app_user }}"
+        password: "{{ mongodb_app_password }}"
+        roles:
+          - db: "{{ mongodb_app_database }}"
+            role: readWrite
+        state: present
+        login_user: "{{ mongodb_admin_user }}"
+        login_password: "{{ mongodb_admin_password }}"
+      no_log: true
+  
+  handlers:
+    - name: restart mongodb
+      systemd:
+        name: mongod
+        state: restarted

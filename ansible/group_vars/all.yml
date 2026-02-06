@@ -1,0 +1,31 @@
+---
+# Common variables for all hosts
+ansible_python_interpreter: /usr/bin/python3
+
+# Application configuration
+app_name: enterprise_platform
+app_version: "1.0.0"
+app_user: appuser
+app_group: appgroup
+app_home: /opt/{{ app_name }}
+
+# Database configuration
+mariadb_version: "10.11"
+mongodb_version: "7.0"
+
+# Network configuration
+firewall_enabled: true
+selinux_state: enforcing
+
+# Package management
+package_update_cache: true
+package_install_recommends: false
+
+# Logging
+log_directory: /var/log/{{ app_name }}
+log_retention_days: 30
+
+# Security
+enable_fail2ban: true
+ssh_port: 22
+ssh_permit_root_login: "no"

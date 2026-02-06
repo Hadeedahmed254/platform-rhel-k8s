@@ -1,0 +1,29 @@
+---
+# RHEL 8 Family specific variables
+os_family: "rhel8"
+os_major_version: 8
+
+# Package names for RHEL 8
+python_package: python38
+python_pip_package: python38-pip
+
+# MariaDB repository for RHEL 8
+mariadb_repo_baseurl: "http://yum.mariadb.org/10.11/rhel8-amd64"
+mariadb_repo_gpgkey: "https://yum.mariadb.org/RPM-GPG-KEY-MariaDB"
+
+# MongoDB repository for RHEL 8
+mongodb_repo_baseurl: "https://repo.mongodb.org/yum/redhat/8/mongodb-org/7.0/x86_64/"
+mongodb_repo_gpgkey: "https://www.mongodb.org/static/pgp/server-7.0.asc"
+
+# System packages
+system_packages:
+  - vim
+  - wget
+  - curl
+  - git
+  - net-tools
+  - firewalld
+  - policycoreutils-python-utils
+
+# Firewall service (firewalld for RHEL 8)
+firewall_service: firewalld

@@ -1,0 +1,28 @@
+[Unit]
+Description=Enterprise Platform Web Application
+After=network.target mariadb.service
+
+[Service]
+Type=simple
+User={{ app_user }}
+Group={{ app_group }}
+WorkingDirectory={{ app_home }}
+Environment="PATH=/usr/local/bin:/usr/bin:/bin"
+Environment="PYTHONUNBUFFERED=1"
+ExecStart=/usr/bin/python3 {{ app_home }}/app.py
+Restart=always
+RestartSec=10
+
+# Security
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths={{ app_home }} {{ log_directory }}
+
+# Logging
+StandardOutput=append:{{ log_directory }}/webapp.log
+StandardError=append:{{ log_directory }}/webapp-error.log
+
+[Install]
+WantedBy=multi-user.target

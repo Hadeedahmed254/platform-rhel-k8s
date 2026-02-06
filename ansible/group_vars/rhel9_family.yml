@@ -1,0 +1,32 @@
+---
+# RHEL 9 Family specific variables
+os_family: "rhel9"
+os_major_version: 9
+
+# Package names for RHEL 9
+python_package: python3
+python_pip_package: python3-pip
+
+# MariaDB repository for RHEL 9
+mariadb_repo_baseurl: "http://yum.mariadb.org/10.11/rhel9-amd64"
+mariadb_repo_gpgkey: "https://yum.mariadb.org/RPM-GPG-KEY-MariaDB"
+
+# MongoDB repository for RHEL 9
+mongodb_repo_baseurl: "https://repo.mongodb.org/yum/redhat/9/mongodb-org/7.0/x86_64/"
+mongodb_repo_gpgkey: "https://www.mongodb.org/static/pgp/server-7.0.asc"
+
+# System packages (RHEL 9 uses different package names)
+system_packages:
+  - vim
+  - wget
+  - curl
+  - git
+  - net-tools
+  - firewalld
+  - python3-policycoreutils
+
+# Firewall service
+firewall_service: firewalld
+
+# RHEL 9 specific: AppStream modules
+enable_appstream_modules: true
