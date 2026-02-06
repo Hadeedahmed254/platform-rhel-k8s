@@ -12,7 +12,7 @@ I follow a structured, production-ready approach to operationalizing infrastruct
 
 ## Proven Track Record
 
-This approach is demonstrated in my **[enterprise-platform-rhel-k8s](https://github.com/yourusername/enterprise-platform-rhel-k8s)** repository, which showcases a complete migration from bare-metal RHEL deployments to containerized Kubernetes infrastructure.
+This approach is demonstrated in my **[platform-rhel-k8s](https://github.com/Hadeedahmed254/platform-rhel-k8s)** repository, which showcases a complete migration from bare-metal RHEL deployments to containerized Kubernetes infrastructure.
 
 ---
 
@@ -258,7 +258,7 @@ I continuously improve operations through:
 My operationalization methodology is **battle-tested**, **scalable**, and **secure**. I don't just deploy applications—I build **production-ready infrastructure** that teams can rely on.
 
 **Portfolio Evidence:**
-- [Enterprise Platform RHEL-K8s Repository](https://github.com/yourusername/enterprise-platform-rhel-k8s)
+- [Enterprise Platform RHEL-K8s Repository](https://github.com/Hadeedahmed254/platform-rhel-k8s)
 - Demonstrates all principles outlined above
 - Production-ready code, not proof-of-concept
 

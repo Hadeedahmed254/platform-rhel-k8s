@@ -163,8 +163,8 @@ sequenceDiagram
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/enterprise-platform-rhel-k8s.git
-cd enterprise-platform-rhel-k8s
+git clone https://github.com/Hadeedahmed254/platform-rhel-k8s.git
+cd platform-rhel-k8s
 ```
 
 ### 2. Ansible Deployment (Bare-Metal)
